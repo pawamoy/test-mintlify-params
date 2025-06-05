@@ -3,37 +3,138 @@ title: 'Introduction'
 description: 'Example section for showcasing API endpoints'
 ---
 
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
-
-## Welcome
-
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
-
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
-
-## Authentication
-
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
-
-```json
-"security": [
-  {
-    "bearerAuth": []
-  }
-]
+```python
+def load(
+    objspec: str | Path | None = None,
+    /,
+    *,
+    submodules: bool = True,
+    try_relative_path: bool = True,
+    extensions: Extensions | None = None,
+    search_paths: Sequence[str | Path] | None = None,
+    docstring_parser: DocstringStyle | Parser | None = None,
+    docstring_options: dict[str, Any] | None = None,
+    lines_collection: LinesCollection | None = None,
+    modules_collection: ModulesCollection | None = None,
+    allow_inspection: bool = True,
+    force_inspection: bool = False,
+    store_source: bool = True,
+    find_stubs_package: bool = False,
+    resolve_aliases: bool = False,
+    resolve_external: bool | None = None,
+    resolve_implicit: bool = False,
+) -> Object | Alias:
 ```
 
-## Params
+Load and return a Griffe object.
 
-<ParamField body="uuid" type="string" required default="0000-00000-000-000-0-0-0-0" children="what?">
-  Some UUID.
+In Griffe's context, loading means:
+
+- searching for a package, and finding it on the file system or as a builtin module
+    (see the [`ModuleFinder`][griffe.ModuleFinder] class for more information)
+- extracting information from each of its (sub)modules, by either parsing
+    the source code (see the [`visit`][griffe.visit] function)
+    or inspecting the module at runtime (see the [`inspect`][griffe.inspect] function)
+
+The extracted information is stored in a collection of modules, which can be queried later.
+Each collected module is a tree of objects, representing the structure of the module.
+See the [`Module`][griffe.Module], [`Class`][griffe.Class],
+[`Function`][griffe.Function], and [`Attribute`][griffe.Attribute] classes
+for more information.
+
+The main class used to load modules is [`GriffeLoader`][griffe.GriffeLoader].
+Convenience functions like this one and [`load_git`][griffe.load_git] are also available.
+
+## Example
+
+```python
+import griffe
+
+module = griffe.load(...)
+```
+
+This is a shortcut for:
+
+```python
+from griffe import GriffeLoader
+
+loader = GriffeLoader(...)
+module = loader.load(...)
+```
+
+See the documentation for the loader: [`GriffeLoader`][griffe.GriffeLoader].
+
+## Parameters
+
+<ParamField body="objspec" type="str | Path | None" default="None">
+  The Python path of an object, or file path to a module.
 </ParamField>
+
+<ParamField body="submodules" type="bool" default="True">
+  Whether to recurse on the submodules.
+  This parameter only makes sense when loading a package (top-level module).
+</ParamField>
+
+<ParamField body="try_relative_path" type="bool" default="True">
+  Whether to try finding the module as a relative path.
+</ParamField>
+
+<ParamField body="extensions" type="Extensions | None" default="None">
+  The extensions to use.
+</ParamField>
+
+<ParamField body="search_paths" type="Sequence[str | Path] | None" default="None">
+  The paths to search into.
+</ParamField>
+
+<ParamField body="docstring_parser" type="ocstringStyle | Parser | None" default="None">
+ The docstring parser to use. By default, no parsing is done.
+</ParamField>
+
+<ParamField body="docstring_options" type="dict[str, Any] | None" default="None">
+  Additional docstring parsing options.
+</ParamField>
+
+<ParamField body="lines_collection" type="LinesCollection | None" default="None">
+ A collection of source code lines.
+</ParamField>
+
+<ParamField body="modules_collection" type="ModulesCollection | None" default="None">
+  A collection of modules.
+</ParamField>
+
+<ParamField body="allow_inspection" type="bool" default="True">
+  Whether to allow inspecting modules when visiting them is not possible.
+</ParamField>
+
+<ParamField body="force_inspection" type="bool" default="False">
+  Whether to force using dynamic analysis when loading data.
+</ParamField>
+
+<ParamField body="store_source" type="bool" default="True">
+ Whether to store code source in the lines collection.
+</ParamField>
+
+<ParamField body="find_stubs_package" type="bool" default="False">
+ Whether to search for stubs-only package.
+If both the package and its stubs are found, they'll be merged together.
+    If only the stubs are found, they'll be used as the package itself.
+</ParamField>
+
+<ParamField body="resolve_aliases" type="bool" default="False">
+Whether to try to load unspecified modules to resolve aliases.
+</ParamField>
+
+<ParamField body="resolve_external" type="bool" default="None">
+  Whether to try to load unspecified modules to resolve aliases.
+    Default value (`None`) means to load external modules only if they are the private sibling
+    or the origin module (for example when `ast` imports from `_ast`).
+</ParamField>
+
+<ParamField body="resolve_implicit" type="bool" default="False">
+   When false, only try to resolve an alias if it is explicitly exported.
+</ParamField>
+
+## Returns
+
+A Griffe object.
